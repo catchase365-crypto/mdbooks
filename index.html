@@ -9,9 +9,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     
     <style>
-        :root { --bg-color: #0d1117; --text-color: #c9d1d9; --accent: #58a6ff; --heading-color: #58a6ff; }
+        :root { --bg-color: #0d1117; --text-color: #c9d1d9; --accent: #58a6ff; --heading-color: #58a6ff; --font-scale: 1; }
+        .markdown-body { font-size: calc(16px * var(--font-scale)) !important; }
         #theme-dark-pad { position: fixed; bottom: 0; left: 0; width: 60px; height: 60px; z-index: 9999; cursor: pointer; background: transparent; }
         #theme-light-pad { position: fixed; bottom: 0; right: 0; width: 60px; height: 60px; z-index: 9999; cursor: pointer; background: transparent; }
+        #zoom-out { position: fixed; left: 0; top: 30%; height: 40%; width: 50px; z-index: 9999; cursor: pointer; }
+        #zoom-in { position: fixed; right: 0; top: 30%; height: 40%; width: 50px; z-index: 9999; cursor: pointer; }
         body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
         
         /* 目录样式 */
@@ -269,11 +272,23 @@
             }
         };
 
+        // 字体缩放
+        function setFontScale(delta) {
+            let scale = parseFloat(localStorage.getItem('kb_font_scale') || 1);
+            scale = Math.max(0.5, Math.min(2.0, scale + delta));
+            localStorage.setItem('kb_font_scale', scale);
+            document.documentElement.style.setProperty('--font-scale', scale);
+        }
+        
         // 初始化加载
+        const savedScale = localStorage.getItem('kb_font_scale') || 1;
+        document.documentElement.style.setProperty('--font-scale', savedScale);
         initTheme();
         loadFileList();
     </script>
     <div id="theme-dark-pad" onclick="setRandomTheme('dark')" title="随机深色模式"></div>
     <div id="theme-light-pad" onclick="setRandomTheme('light')" title="随机浅色模式"></div>
+    <div id="zoom-out" onclick="setFontScale(-0.1)" title="缩小字体"></div>
+    <div id="zoom-in" onclick="setFontScale(0.1)" title="放大字体"></div>
 </body>
 </html>
