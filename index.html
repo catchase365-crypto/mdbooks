@@ -68,6 +68,7 @@
         <div id="toggle-fullscreen" title="点击切换全屏" style="cursor: pointer; position: fixed; top: 0; left: 0; width: 50px; height: 50px; z-index: 1000;"></div>
         <div id="open-toc" title="点击查看大纲" style="cursor: pointer; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 50px; z-index: 1000;"></div>
         <div id="back-to-list" title="点击切换侧边目录" style="cursor: pointer; position: fixed; top: 0; right: 0; width: 50px; height: 50px; z-index: 3000;"></div>
+        <div id="offline-badge" style="position: fixed; top: 10px; right: 60px; font-size: 12px; color: orange; pointer-events: none; z-index: 3000; display: none;">Offline</div>
         <div id="sidebar"><h3>目录列表</h3><div id="sidebar-list"></div></div>
         <div id="toc-modal" style="display:none; position:fixed; top:10%; left:5%; right:5%; bottom:10%; background:rgba(13,17,23,0.98); z-index:5000; border-radius:10px; border:1px solid #30363d; flex-direction: column;">
             <div style="display:flex; justify-content:space-between; align-items: center; padding: 15px 20px; background: #161b22; border-bottom: 1px solid #30363d; border-radius: 10px 10px 0 0; position: sticky; top: 0;">
@@ -93,6 +94,21 @@
         const MD_PATH = "md";
         
         const listView = document.getElementById('list-view');
+        
+        // 初始化：优先从缓存渲染列表
+        (function() {
+            const localFiles = JSON.parse(localStorage.getItem('md_cache_list') || '[]');
+            if (localFiles.length > 0) {
+                const listHTML = localFiles.map(file => `
+                    <a href="javascript:void(0)" class="md-item" onclick="openReader('${file.download_url}', '${file.name}')">
+                        <span>📄</span> ${file.name}
+                    </a>
+                `).join('');
+                document.getElementById('list-content').innerHTML = listHTML;
+                document.getElementById('sidebar-list').innerHTML = listHTML;
+                document.getElementById('file-count').innerText = `离线模式：找到 ${localFiles.length} 个文档`;
+            }
+        })();
         const readerView = document.getElementById('reader-view');
         const listContent = document.getElementById('list-content');
         const markdownContent = document.getElementById('content');
@@ -132,14 +148,31 @@
         // 1. 获取 GitHub 目录列表
         async function loadFileList() {
             try {
-                const localFiles = JSON.parse(localStorage.getItem('md_cache_list') || '[]');
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${MD_PATH}`);
-                if (!response.ok && localFiles.length === 0) throw new Error('无法读取仓库列表');
-                
-                let files = response.ok ? await response.json() : localFiles;
-                files = files.filter(f => f.name.endsWith('.md')).sort((a, b) => a.name.localeCompare(b.name));
+                let files = [];
+                let isOffline = false;
 
-                document.getElementById('file-count').innerText = `共找到 ${files.length} 个文档 ${localFiles.length > 0 ? '(已离线: ' + localFiles.length + ')' : ''}`;
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${MD_PATH}`, { cache: 'no-cache' });
+                    if (!response.ok) throw new Error();
+                    files = (await response.json()).filter(f => f.name.endsWith('.md'));
+                    
+                    const oldCacheList = JSON.parse(localStorage.getItem('md_cache_list') || '[]');
+                    const merged = [...oldCacheList];
+                    files.forEach(f => { if (!merged.find(item => item.name === f.name)) merged.push(f); });
+                    localStorage.setItem('md_cache_list', JSON.stringify(merged));
+                } catch (e) {
+                    isOffline = true;
+                    files = JSON.parse(localStorage.getItem('md_cache_list') || '[]');
+                    if (files.length === 0) throw new Error('网络连接中断且无离线缓存数据');
+                }
+
+                files.sort((a, b) => a.name.localeCompare(b.name));
+                const localCache = JSON.parse(localStorage.getItem('md_cache_list') || '[]');
+                if (isOffline) {
+                    document.getElementById('file-count').innerHTML = `<span style="color:orange">[离线模式]</span> 共找到 ${files.length} 个本地缓存文档`;
+                } else {
+                    document.getElementById('file-count').innerText = `共找到 ${files.length} 个文档 ${localCache.length > 0 ? '(缓存数: ' + localCache.length + ')' : ''}`;
+                }
                 
                 const listHTML = files.map(file => `
                     <a href="javascript:void(0)" class="md-item" onclick="openReader('${file.download_url}', '${file.name}')">
@@ -197,6 +230,8 @@
             try {
                 const cache = JSON.parse(localStorage.getItem('md_cache_data') || '{}');
                 const mdText = cache[fileName] || await (await fetch(rawUrl)).text();
+                if (!cache[fileName]) document.getElementById('offline-badge').style.display = 'block';
+                else document.getElementById('offline-badge').style.display = 'none';
 
                 // 配置解析器
                 marked.setOptions({
