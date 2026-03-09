@@ -50,7 +50,17 @@
     </style>
 
     <link rel="manifest" href="manifest.json">
-    <script>if('service-worker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
+    <script>if('service-worker' in navigator){navigator.serviceWorker.register('sw.js');}
+
+function triggerFullScreen() {
+    var d = document.documentElement;
+    var fn = d.requestFullscreen || d.webkitRequestFullScreen || d.mozRequestFullScreen || d.msRequestFullscreen;
+    if(fn) fn.call(d);
+}
+document.getElementById("toggle-fullscreen").addEventListener("click", function() {
+    triggerFullScreen();
+});
+</script>
 </head>
 <body>
 
