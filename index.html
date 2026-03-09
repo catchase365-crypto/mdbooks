@@ -230,8 +230,7 @@
             try {
                 const cache = JSON.parse(localStorage.getItem('md_cache_data') || '{}');
                 const mdText = cache[fileName] || await (await fetch(rawUrl)).text();
-                if (!cache[fileName]) document.getElementById('offline-badge').style.display = 'block';
-                else document.getElementById('offline-badge').style.display = 'none';
+                document.getElementById('offline-badge').style.display = 'none';
 
                 // 配置解析器
                 marked.setOptions({
