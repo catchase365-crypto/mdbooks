@@ -1,10 +1,10 @@
 {
-  "name": "Crypto MD 知识库",
+  "name": "MD 知识库",
   "short_name": "MDBooks",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#0d1117",
-  "theme_color": "#58a6ff",
+  "theme_color": "#0d1117",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2991/2991108.png",
