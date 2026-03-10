@@ -82,7 +82,7 @@ document.getElementById("toggle-fullscreen").addEventListener("click", function(
         <div id="open-toc" title="点击查看大纲" style="cursor: pointer; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 50px; z-index: 1000;"></div>
         <div id="back-to-list" title="点击切换侧边目录" style="cursor: pointer; position: fixed; top: 0; right: 0; width: 50px; height: 50px; z-index: 3000;"></div>
         <div id="offline-badge" style="position: fixed; top: 10px; right: 60px; font-size: 12px; color: orange; pointer-events: none; z-index: 3000; display: none;">Offline</div>
-        <div id="sidebar"><h3>目录列表</h3><div id="sidebar-list"></div></div>
+        <div id="sidebar"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3>目录列表</h3><button onclick="document.getElementById('reader-view').style.display='none'; document.getElementById('list-view').style.display='block'; document.getElementById('sidebar').classList.remove('open');" style="background: #30363d; border: none; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer;">返回首页</button></div><div id="sidebar-list"></div></div>
         <div id="toc-modal" style="display:none; position:fixed; top:10%; left:5%; right:5%; bottom:10%; background:rgba(13,17,23,0.98); z-index:5000; border-radius:10px; border:1px solid #30363d; flex-direction: column;">
             <div style="display:flex; justify-content:space-between; align-items: center; padding: 15px 20px; background: #161b22; border-bottom: 1px solid #30363d; border-radius: 10px 10px 0 0; position: sticky; top: 0;">
                 <strong style="color: var(--accent);">文章大纲</strong>
@@ -101,6 +101,29 @@ document.getElementById("toggle-fullscreen").addEventListener("click", function(
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 
+    <!-- 
+    大说明：本项目配置中心
+    --------------------------------------------------------------------------------
+    1. 仓库设置 (核心)：修改下方 REPO_OWNER, REPO_NAME, MD_PATH 即可指向任意 GitHub 仓库。
+       - REPO_OWNER: GitHub 用户名或组织名。
+       - REPO_NAME: 仓库名称。密码选项
+       - MD_PATH: 存放 Markdown 文件的文件夹路径 (若在根目录可留空或修改 fetch 逻辑)。
+    
+    2. 样式与主题：
+       - 颜色控制：在 <style> 标签内的 :root 部分修改变量，或通过 setRandomTheme 函数逻辑调整。
+       - 字体缩放：通过 setFontScale 函数修改步长。
+    
+    3. 核心功能逻辑：
+       - 离线缓存：使用 localStorage 存储 'md_cache_list' (文件列表) 和 'md_cache_data' (文件内容)。
+       - 内容渲染：依赖 marked.js 将 MD 转为 HTML，依赖 prism.js 进行代码高亮。
+       - 事件驱动：阅读进度自动保存到 localStorage，key 格式为 'scroll_' + 文件名。
+       - 目录生成：generateToc 函数负责解析 h1, h2, h3 标签生成大纲。
+    
+    4. 如何迁移：
+       - 仅需修改 script 标签下的 REPO_OWNER 和 REPO_NAME 常量。
+       - 若仓库 API 限制较多，可考虑自行搭建代理或使用 GitHub Token。
+    --------------------------------------------------------------------------------
+    -->
     <script>
         const REPO_OWNER = "catchase365-crypto";
         const REPO_NAME = "5s";
@@ -226,8 +249,10 @@ document.getElementById("toggle-fullscreen").addEventListener("click", function(
 
         // 2. 打开阅读器
         async function openReader(rawUrl, fileName) {
-            // 始终关闭侧边栏
+            // 始终关闭侧边栏与大纲
             document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('toc-modal').style.display = 'none';
+            document.body.style.overflow = '';
             
             if (currentFile === fileName && readerView.style.display === 'block') return;
 
