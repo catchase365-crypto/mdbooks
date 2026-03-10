@@ -1,6 +1,6 @@
 {
-  "name": "MD 知识库",
-  "short_name": "MDBooks",
+  "name": "mdbooks",
+  "short_name": "mdbooks",
   "start_url": "./index.html",
   "display": "fullscreen",
   "background_color": "#0d1117",
