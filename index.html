@@ -235,17 +235,27 @@
                 return a.name.localeCompare(b.name, 'zh-CN');
             });
 
+            // 检查目录是否包含有效的 md 文件（递归检查），并过滤掉根目录的 readme.md 等文件
+            function hasMdFiles(items) {
+                return items && items.some(item => {
+                    if (item.type === 'file' && item.name.toLowerCase() === 'readme.md') return false;
+                    return (item.type === 'file' && item.name.endsWith('.md')) || 
+                           (item.type === 'dir' && hasMdFiles(item.children));
+                });
+            }
+
             sortedData.forEach(item => {
+                if (item.type === 'dir' && !hasMdFiles(item.children)) return;
+                if (item.type === 'file' && item.name.toLowerCase() === 'readme.md') return;
+                
                 const li = document.createElement('li');
                 
                 if (item.type === 'dir') {
-                    // 文件夹节点 (默认折叠)
                     li.className = 'folder-closed';
                     const nodeDiv = document.createElement('div');
                     nodeDiv.className = 'tree-node';
                     nodeDiv.innerHTML = `<span class="icon">📁</span><span class="text">${item.name}</span>`;
                     
-                    // 点击展开/折叠
                     nodeDiv.onclick = () => {
                         li.classList.toggle('folder-closed');
                         li.classList.toggle('folder-open');
@@ -253,12 +263,10 @@
                     };
                     li.appendChild(nodeDiv);
                     
-                    if (item.children && item.children.length > 0) {
-                        const childrenContainer = document.createElement('div');
-                        childrenContainer.className = 'folder-children';
-                        buildTreeDom(item.children, childrenContainer); // 递归
-                        li.appendChild(childrenContainer);
-                    }
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = 'folder-children';
+                    buildTreeDom(item.children, childrenContainer);
+                    li.appendChild(childrenContainer);
                 } 
                 else if (item.type === 'file' && item.name.endsWith('.md')) {
                     // 文件节点
